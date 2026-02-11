@@ -18,7 +18,6 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-
 #include "app_subghz_phy.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -52,6 +51,7 @@ volatile State_t state;
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
+static void MX_GPIO_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -79,7 +79,8 @@ int main(void)
   // setting callbacks function of the radio
   RadioEvents.TxDone = OnTxDone_State;
   RadioEvents.RxDone = OnRxDone_State;
-
+  RadioEvents.RxTimeout = OnRxTimeout_State;
+  RadioEvents.TxTimeout = OnTxTimeout_State;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -99,10 +100,19 @@ int main(void)
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
+  MX_GPIO_Init();
   MX_SubGHz_Phy_Init();
   /* USER CODE BEGIN 2 */
   Radio.Init(&RadioEvents);
+  // TODO: different values for 'Murica (possibly through a macro,
+  // possibly there is the need for an antenna for USA)
   Radio.SetChannel(868000000); // 868MHz - Standard frequency for Europe
+  Radio.SetTxConfig(MODEM_LORA, 10, 0, 0, 12, 8, 8,
+    false, 0, false, 0, 0, 3000);
+  Radio.SetRxConfig(MODEM_LORA, 0, 12, 8, 0, 8,
+    0, 0, 0, true, 0, 0, false,
+    true);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -119,6 +129,8 @@ int main(void)
         break;
       case STATE_TX:
         {
+          HAL_Delay(250);
+          HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_RESET);
           char *word;
 #ifdef IS_MASTER
           word = "PING";
@@ -126,9 +138,12 @@ int main(void)
           word = "PONG";
 #endif
           Radio.Send((uint8_t*)word, 4);
-          break;
+          state = STATE_IDLE;
         }
+        break;
       case STATE_RX:
+        Radio.Rx(0);
+        state = STATE_IDLE;
         break;
       default:
     }
@@ -204,13 +219,64 @@ void MX_SUBGHZ_Init(void)
 
 }
 
+/**
+  * @brief GPIO Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_GPIO_Init(void)
+{
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+  /* USER CODE BEGIN MX_GPIO_Init_1 */
+
+  /* USER CODE END MX_GPIO_Init_1 */
+
+  /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOB_CLK_ENABLE();
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_SET);
+
+  /*Configure GPIO pin : LED_RED_Pin */
+  GPIO_InitStruct.Pin = LED_RED_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(LED_RED_GPIO_Port, &GPIO_InitStruct);
+
+  /* USER CODE BEGIN MX_GPIO_Init_2 */
+
+  /* USER CODE END MX_GPIO_Init_2 */
+}
+
 /* USER CODE BEGIN 4 */
+/**
+ * @brief Changes the state to transmission state.
+ * @param payload The data received.
+ * @param size The dimension of the payload in byte.
+ * @param rssi
+ * @param snr
+ */
 void OnRxDone_State(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr) {
+  HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_RESET);
   state = STATE_TX;
 }
 
+/**
+ * @brief When the transmission is complete go in a receive state.
+ */
 void OnTxDone_State() {
-  state = STATE_IDLE;
+  state = STATE_RX;
+}
+
+void OnRxTimeout_State()
+{
+  state = STATE_TX;
+}
+
+void OnTxTimeout_State()
+{
+  state = STATE_RX;
 }
 
 /* USER CODE END 4 */

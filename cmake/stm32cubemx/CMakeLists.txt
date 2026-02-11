@@ -76,11 +76,11 @@ set(Utilities_Src
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Utilities/lpm/tiny_lpm/stm32_lpm.c
 )
 set(SubGHz_Phy_Src
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Middlewares/Third_Party/SubGHz_Phy/stm32_radio_driver/radio.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Middlewares/Third_Party/SubGHz_Phy/stm32_radio_driver/radio_fw.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Middlewares/Third_Party/SubGHz_Phy/stm32_radio_driver/wl_lr_fhss.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Middlewares/Third_Party/SubGHz_Phy/stm32_radio_driver/radio.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Middlewares/Third_Party/SubGHz_Phy/stm32_radio_driver/lr_fhss_mac.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Middlewares/Third_Party/SubGHz_Phy/stm32_radio_driver/radio_driver.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../Middlewares/Third_Party/SubGHz_Phy/stm32_radio_driver/wl_lr_fhss.c
 )
 
 # Link directories setup

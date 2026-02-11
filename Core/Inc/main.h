@@ -61,16 +61,19 @@ void MX_SUBGHZ_Init(void);
 /* USER CODE BEGIN EFP */
 void OnTxDone_State();
 void OnRxDone_State(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr);
+
+void OnRxTimeout_State();
+void OnTxTimeout_State();
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define LED_RED_Pin GPIO_PIN_5
+#define LED_RED_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 
 // [IMPORTANT] uncomment when this code (radio board) has to start communication
 #define IS_MASTER
-#define LED_RED_Pin GPIO_PIN_5
-#define LED_RED_GPIO_Port GPIOB
 
 /* USER CODE END Private defines */
 
