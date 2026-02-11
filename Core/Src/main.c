@@ -118,14 +118,16 @@ int main(void)
         // try listening
         break;
       case STATE_TX:
-        char *word;
+        {
+          char *word;
 #ifdef IS_MASTER
-        word = "PING";
+          word = "PING";
 #else
-        word = "PONG";
+          word = "PONG";
 #endif
-        Radio.Send((uint8_t*)word, 4);
-        break;
+          Radio.Send((uint8_t*)word, 4);
+          break;
+        }
       case STATE_RX:
         break;
       default:
