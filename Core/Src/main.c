@@ -104,15 +104,21 @@ int main(void)
   MX_SubGHz_Phy_Init();
   /* USER CODE BEGIN 2 */
   Radio.Init(&RadioEvents);
-  // TODO: different values for 'Murica (possibly through a macro,
-  // possibly there is the need for an antenna for USA)
+  // TODO: different values for 'Murica (possibly through a macro)
+  // (possibly there is the need for an antenna for USA)
   Radio.SetChannel(868000000); // 868MHz - Standard frequency for Europe
-  Radio.SetTxConfig(MODEM_LORA, 10, 0, 0, 12, 8, 8,
-    false, 0, false, 0, 0, 3000);
-  Radio.SetRxConfig(MODEM_LORA, 0, 12, 8, 0, 8,
-    0, 0, 0, true, 0, 0, false,
+  // change datarate to 12 for longest range (to both Rx and Tx)
+  Radio.SetTxConfig(MODEM_LORA, 14, 0, 0, 7, 1, 8,
+    false, true, false, 0, false, 60000);
+  Radio.SetRxConfig(MODEM_LORA, 0, 7, 1, 0, 8,
+    0, false, 0, true, false, 0, false,
     true);
-
+#ifndef IS_MASTER
+  HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_RESET);
+  HAL_Delay(3000);
+  // TODO: fixare HAL_Delay che non funziona
+  HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_SET);
+#endif
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -129,8 +135,8 @@ int main(void)
         break;
       case STATE_TX:
         {
-          HAL_Delay(250);
-          HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_RESET);
+          HAL_Delay(1000);
+          HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_SET);
           char *word;
 #ifdef IS_MASTER
           word = "PING";
@@ -142,6 +148,7 @@ int main(void)
         }
         break;
       case STATE_RX:
+        HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_SET);
         Radio.Rx(0);
         state = STATE_IDLE;
         break;
@@ -235,7 +242,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : LED_RED_Pin */
   GPIO_InitStruct.Pin = LED_RED_Pin;
@@ -258,7 +265,6 @@ static void MX_GPIO_Init(void)
  * @param snr
  */
 void OnRxDone_State(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr) {
-  HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_RESET);
   state = STATE_TX;
 }
 

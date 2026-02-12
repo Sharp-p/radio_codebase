@@ -73,7 +73,7 @@ void OnTxTimeout_State();
 /* USER CODE BEGIN Private defines */
 
 // [IMPORTANT] uncomment when this code (radio board) has to start communication
-#define IS_MASTER
+//#define IS_MASTER
 
 /* USER CODE END Private defines */
 
