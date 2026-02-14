@@ -7,7 +7,7 @@
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2025 STMicroelectronics.
+  * Copyright (c) 2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -84,7 +84,7 @@ void SystemApp_Init(void)
 
 /* Set #if 0 if you want to keep the default HAL instead overcharge them*/
 /* USER CODE BEGIN Overload_HAL_weaks_1 */
-#if 1
+#if 0
 /* USER CODE END Overload_HAL_weaks_1 */
 
 /* USER CODE BEGIN Overload_HAL_weaks_1a */

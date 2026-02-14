@@ -6,7 +6,7 @@
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2025 STMicroelectronics.
+  * Copyright (c) 2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -19,10 +19,12 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "app_subghz_phy.h"
+#include "gpio.h"
+#include "radio_def.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "radio.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -41,19 +43,20 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-SUBGHZ_HandleTypeDef hsubghz;
 
 /* USER CODE BEGIN PV */
 static RadioEvents_t RadioEvents;
 volatile State_t state;
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-static void MX_GPIO_Init(void);
 /* USER CODE BEGIN PFP */
+static void OnTxDone();
+static void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr);
 
+static void OnRxTimeout();
+static void OnTxTimeout();
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -69,18 +72,11 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-  // setting the state machine initial state
 #ifdef IS_MASTER
   state = STATE_TX;
 #else
   state = STATE_RX;
 #endif
-
-  // setting callbacks function of the radio
-  RadioEvents.TxDone = OnTxDone_State;
-  RadioEvents.RxDone = OnRxDone_State;
-  RadioEvents.RxTimeout = OnRxTimeout_State;
-  RadioEvents.TxTimeout = OnTxTimeout_State;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -103,22 +99,32 @@ int main(void)
   MX_GPIO_Init();
   MX_SubGHz_Phy_Init();
   /* USER CODE BEGIN 2 */
+  RadioEvents.TxDone = OnTxDone;
+  RadioEvents.RxDone = OnRxDone;
+  RadioEvents.TxTimeout = OnTxTimeout;
+  RadioEvents.RxTimeout = OnRxTimeout;
+
   Radio.Init(&RadioEvents);
+
   // TODO: different values for 'Murica (possibly through a macro)
   // (possibly there is the need for an antenna for USA)
   Radio.SetChannel(868000000); // 868MHz - Standard frequency for Europe
-  // change datarate to 12 for longest range (to both Rx and Tx)
+
+  // TX Config: Power 14dBm, SF7, BW 125kHz, CR 4/5, Preamble 8, FixLen False, CRC On, FreqHop False, Timeout 3s
   Radio.SetTxConfig(MODEM_LORA, 14, 0, 0, 7, 1, 8,
     false, true, false, 0, false, 60000);
+  // RX Config: BW 125kHz, SF7, CR 4/5, Preamble 8, Timeout 0 (Infinito), FixLen False, CRC On
   Radio.SetRxConfig(MODEM_LORA, 0, 7, 1, 0, 8,
     0, false, 0, true, false, 0, false,
     true);
-#ifndef IS_MASTER
+
+  // check just to be sure
+  for(int i=0; i<3; i++) {
+    HAL_GPIO_TogglePin(LED_RED_GPIO_Port, LED_RED_Pin);
+    HAL_Delay(200);
+  }
   HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_RESET);
-  HAL_Delay(3000);
-  // TODO: fixare HAL_Delay che non funziona
-  HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_SET);
-#endif
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -129,30 +135,42 @@ int main(void)
     MX_SubGHz_Phy_Process();
 
     /* USER CODE BEGIN 3 */
-    switch (state) {
+    switch (state)
+    {
       case STATE_IDLE:
-        // try listening
+        {
+          HAL_GPIO_TogglePin(LED_RED_GPIO_Port, LED_RED_Pin);
+          HAL_Delay(200);
+        }
         break;
       case STATE_TX:
         {
+          HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_RESET);
+
           HAL_Delay(1000);
-          HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_SET);
-          char *word;
+
+          char *msg;
 #ifdef IS_MASTER
-          word = "PING";
+          msg = "PING";
 #else
-          word = "PONG";
+          msg = "PONG";
 #endif
-          Radio.Send((uint8_t*)word, 4);
+          Radio.Send((uint8_t*)msg, 4);
+
           state = STATE_IDLE;
         }
         break;
       case STATE_RX:
-        HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_SET);
-        Radio.Rx(0);
-        state = STATE_IDLE;
+        {
+          HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_SET);
+
+          Radio.Rx(0);
+
+          state = STATE_IDLE;
+        }
         break;
-      default:
+    default:
+      break;
     }
   }
   /* USER CODE END 3 */
@@ -200,88 +218,31 @@ void SystemClock_Config(void)
   }
 }
 
-/**
-  * @brief SUBGHZ Initialization Function
-  * @param None
-  * @retval None
-  */
-void MX_SUBGHZ_Init(void)
-{
-
-  /* USER CODE BEGIN SUBGHZ_Init 0 */
-
-  /* USER CODE END SUBGHZ_Init 0 */
-
-  /* USER CODE BEGIN SUBGHZ_Init 1 */
-
-  /* USER CODE END SUBGHZ_Init 1 */
-  hsubghz.Init.BaudratePrescaler = SUBGHZSPI_BAUDRATEPRESCALER_8;
-  if (HAL_SUBGHZ_Init(&hsubghz) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN SUBGHZ_Init 2 */
-
-  /* USER CODE END SUBGHZ_Init 2 */
-
-}
-
-/**
-  * @brief GPIO Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_GPIO_Init(void)
-{
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
-  /* USER CODE BEGIN MX_GPIO_Init_1 */
-
-  /* USER CODE END MX_GPIO_Init_1 */
-
-  /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOB_CLK_ENABLE();
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin : LED_RED_Pin */
-  GPIO_InitStruct.Pin = LED_RED_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(LED_RED_GPIO_Port, &GPIO_InitStruct);
-
-  /* USER CODE BEGIN MX_GPIO_Init_2 */
-
-  /* USER CODE END MX_GPIO_Init_2 */
-}
-
 /* USER CODE BEGIN 4 */
-/**
- * @brief Changes the state to transmission state.
- * @param payload The data received.
- * @param size The dimension of the payload in byte.
- * @param rssi
- * @param snr
- */
-void OnRxDone_State(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr) {
-  state = STATE_TX;
-}
-
-/**
- * @brief When the transmission is complete go in a receive state.
- */
-void OnTxDone_State() {
+void OnTxDone(void) {
+  // Trasmissione finita -> Passa in ricezione
   state = STATE_RX;
 }
 
-void OnRxTimeout_State()
+void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr)
 {
+  // Messaggio ricevuto!
+  // Faccio un flash veloce del LED per segnalare la ricezione
+  HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_SET);
+  HAL_Delay(50); // Piccolo delay bloccante (ok qui perché breve)
+  HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_RESET);
+
+  // Rispondo
   state = STATE_TX;
 }
 
-void OnTxTimeout_State()
-{
+void OnTxTimeout(void) {
+  // Errore? Torno in ascolto
+  state = STATE_RX;
+}
+
+void OnRxTimeout(void) {
+  // Non dovrebbe accadere con Rx(0), ma per sicurezza torno in ascolto
   state = STATE_RX;
 }
 

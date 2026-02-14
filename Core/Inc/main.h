@@ -7,7 +7,7 @@
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2025 STMicroelectronics.
+  * Copyright (c) 2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -31,8 +31,7 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include <string.h>
-#include "radio.h"
+
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -56,14 +55,9 @@ extern "C" {
 
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
-void MX_SUBGHZ_Init(void);
 
 /* USER CODE BEGIN EFP */
-void OnTxDone_State();
-void OnRxDone_State(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr);
 
-void OnRxTimeout_State();
-void OnTxTimeout_State();
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
@@ -71,10 +65,8 @@ void OnTxTimeout_State();
 #define LED_RED_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
-
 // [IMPORTANT] uncomment when this code (radio board) has to start communication
 //#define IS_MASTER
-
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
