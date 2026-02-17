@@ -20,10 +20,11 @@
 #include "main.h"
 #include "app_subghz_phy.h"
 #include "gpio.h"
-#include "radio_def.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <string.h>
+
 #include "radio.h"
 /* USER CODE END Includes */
 
@@ -121,7 +122,7 @@ int main(void)
   // check just to be sure
   for(int i=0; i<3; i++) {
     HAL_GPIO_TogglePin(LED_RED_GPIO_Port, LED_RED_Pin);
-    HAL_Delay(200);
+    HAL_Delay(500);
   }
   HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_RESET);
 
@@ -139,8 +140,8 @@ int main(void)
     {
       case STATE_IDLE:
         {
-          HAL_GPIO_TogglePin(LED_RED_GPIO_Port, LED_RED_Pin);
-          HAL_Delay(200);
+          //HAL_GPIO_TogglePin(LED_RED_GPIO_Port, LED_RED_Pin);
+          //HAL_Delay(200);
         }
         break;
       case STATE_TX:
@@ -226,13 +227,21 @@ void OnTxDone(void) {
 
 void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr)
 {
-  // Messaggio ricevuto!
-  // Faccio un flash veloce del LED per segnalare la ricezione
-  HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_SET);
-  HAL_Delay(50); // Piccolo delay bloccante (ok qui perché breve)
-  HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_RESET);
+  // received message
+#ifdef IS_MASTER
+  if (strncmp(payload, "PONG", size) || size != 4)
+#else
+  if (strncmp(payload, "PING", size) || size != 4)
+#endif
+  {
+    // if received message not well-formed light up led longer
+    HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_RESET);
+    HAL_Delay(500);
+    HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_SET);
+    HAL_Delay(250);
+  }
 
-  // Rispondo
+  // we pass to transmission
   state = STATE_TX;
 }
 

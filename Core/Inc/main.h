@@ -63,10 +63,15 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define LED_RED_Pin GPIO_PIN_5
 #define LED_RED_GPIO_Port GPIOB
+#define RF_CTRL1_Pin GPIO_PIN_4
+#define RF_CTRL1_GPIO_Port GPIOA
+#define RF_CTRL2_Pin GPIO_PIN_5
+#define RF_CTRL2_GPIO_Port GPIOA
 
 /* USER CODE BEGIN Private defines */
 // [IMPORTANT] uncomment when this code (radio board) has to start communication
-//#define IS_MASTER
+// [IMPORTANT] && the first board to start HAS to be the slave (will wait in Rx)
+#define IS_MASTER
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

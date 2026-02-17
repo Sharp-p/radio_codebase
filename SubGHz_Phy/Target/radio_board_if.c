@@ -22,7 +22,7 @@
 #include "radio_board_if.h"
 
 /* USER CODE BEGIN Includes */
-
+#include "main.h"
 /* USER CODE END Includes */
 
 /* External variables ---------------------------------------------------------*/
@@ -76,7 +76,6 @@ int32_t RBI_Init(void)
   /* 2/ Or implement RBI_Init here */
   int32_t retcode = 0;
   /* USER CODE BEGIN RBI_Init_2 */
-#warning user to provide its board code or to call his board driver functions
   /* USER CODE END RBI_Init_2 */
   return retcode;
 #endif  /* USE_BSP_DRIVER  */
@@ -102,7 +101,8 @@ int32_t RBI_DeInit(void)
   /* 2/ Or implement RBI_DeInit here */
   int32_t retcode = 0;
   /* USER CODE BEGIN RBI_DeInit_2 */
-#warning user to provide its board code or to call his board driver functions
+  HAL_GPIO_WritePin(RF_CTRL1_GPIO_Port, RF_CTRL1_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(RF_CTRL2_GPIO_Port, RF_CTRL2_Pin, GPIO_PIN_RESET);
   /* USER CODE END RBI_DeInit_2 */
   return retcode;
 #endif  /* USE_BSP_DRIVER */
@@ -129,7 +129,30 @@ int32_t RBI_ConfigRFSwitch(RBI_Switch_TypeDef Config)
   /* 2/ Or implement RBI_ConfigRFSwitch here */
   int32_t retcode = 0;
   /* USER CODE BEGIN RBI_ConfigRFSwitch_2 */
-#warning user to provide its board code or to call his board driver functions
+  switch (Config)
+  {
+  case RBI_SWITCH_OFF:
+    {
+      // turn off
+      RBI_DeInit();
+      break;
+    }
+  case RBI_SWITCH_RX:
+    {
+      // PA4 high PA5 low = Rx
+      HAL_GPIO_WritePin(RF_CTRL1_GPIO_Port, RF_CTRL1_Pin, GPIO_PIN_SET);
+      HAL_GPIO_WritePin(RF_CTRL2_GPIO_Port, RF_CTRL2_Pin, GPIO_PIN_RESET);
+      break;
+    }
+  case RBI_SWITCH_RFO_LP: // no lp transmission
+  case RBI_SWITCH_RFO_HP:
+    {
+      // PA4 low PA5 high = hp Tx
+      HAL_GPIO_WritePin(RF_CTRL1_GPIO_Port, RF_CTRL1_Pin, GPIO_PIN_RESET);
+      HAL_GPIO_WritePin(RF_CTRL2_GPIO_Port, RF_CTRL2_Pin, GPIO_PIN_SET);
+      break;
+    }
+  }
   /* USER CODE END RBI_ConfigRFSwitch_2 */
   return retcode;
 #endif  /* USE_BSP_DRIVER */
@@ -155,7 +178,8 @@ int32_t RBI_GetTxConfig(void)
   /* 2/ Or implement RBI_GetTxConfig here */
   int32_t retcode = RBI_CONF_RFO;
   /* USER CODE BEGIN RBI_GetTxConfig_2 */
-#warning user to provide its board code or to call his board driver functions
+  // this means that the board is configured to on Tx on HP
+  retcode = RBI_CONF_RFO_HP;
   /* USER CODE END RBI_GetTxConfig_2 */
   return retcode;
 #endif  /* USE_BSP_DRIVER */
@@ -181,7 +205,8 @@ int32_t RBI_IsTCXO(void)
   /* 2/ Or implement RBI_IsTCXO here */
   int32_t retcode = IS_TCXO_SUPPORTED;
   /* USER CODE BEGIN RBI_IsTCXO_2 */
-#warning user to provide its board code or to call his board driver functions
+  // 1 means Temperature Compensated Crystal Oscillator (TCXO) is supported
+  retcode = 1;
   /* USER CODE END RBI_IsTCXO_2 */
   return retcode;
 #endif  /* USE_BSP_DRIVER  */
@@ -207,7 +232,7 @@ int32_t RBI_IsDCDC(void)
   /* 2/ Or implement RBI_IsDCDC here */
   int32_t retcode = IS_DCDC_SUPPORTED;
   /* USER CODE BEGIN RBI_IsDCDC_2 */
-#warning user to provide its board code or to call his board driver functions
+  retcode = 1;
   /* USER CODE END RBI_IsDCDC_2 */
   return retcode;
 #endif  /* USE_BSP_DRIVER  */
@@ -233,7 +258,6 @@ int32_t RBI_GetRFOMaxPowerConfig(RBI_RFOMaxPowerConfig_TypeDef Config)
   /* 2/ Or implement RBI_RBI_GetRFOMaxPowerConfig here */
   int32_t ret = 0;
   /* USER CODE BEGIN RBI_GetRFOMaxPowerConfig_2 */
-#warning user to provide its board code or to call his board driver functions
   if (Config == RBI_RFO_LP_MAXPOWER)
   {
     ret = 15; /*dBm*/
