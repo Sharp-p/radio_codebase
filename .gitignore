@@ -1,0 +1,6 @@
+# cmake build dirs of CLion
+/cmake-*
+# temporary file used during code generation
+.mxproject
+# CLion editor settings
+.idea

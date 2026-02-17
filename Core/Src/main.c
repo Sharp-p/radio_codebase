@@ -234,7 +234,7 @@ void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr)
   if (strncmp(payload, "PING", size) || size != 4)
 #endif
   {
-    // if received message not well-formed light up led longer
+    // if received message not well-formed, light up led longer
     HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_RESET);
     HAL_Delay(500);
     HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, GPIO_PIN_SET);
